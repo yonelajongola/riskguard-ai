@@ -59,7 +59,15 @@ Owns EF Core and ASP.NET Core Identity:
 - repository implementations;
 - idempotent reference and demo seed logic.
 
-SQLite is used in Development. `Database__Provider=SqlServer` with `SQL_CONNECTION_STRING` selects SQL Server or Azure SQL.
+SQLite is used in Development. `Database__Provider=SqlServer` with
+`SQL_CONNECTION_STRING` selects SQL Server or Azure SQL. Provider-specific EF
+Core migrations are kept in separate assemblies:
+
+- `RiskGuard.Persistence` for SQLite;
+- `RiskGuard.Persistence.SqlServerMigrations` for SQL Server and Azure SQL.
+
+This prevents SQLite column types and identity annotations from leaking into
+Azure SQL deployment scripts.
 
 ### RiskGuard.Infrastructure
 

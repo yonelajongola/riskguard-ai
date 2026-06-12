@@ -57,6 +57,12 @@ Placeholder files are deliberately nonfunctional until values are supplied.
 - production Swagger disabled by default
 - public registration disabled by default outside Development
 
+On an empty production database, startup creates only the fixed Identity role
+definitions. The deployment runbook permits registration briefly to create the
+first workspace administrator, then requires
+`Authentication__AllowPublicRegistration=false` and an API restart. Demo users
+and business data remain disabled through `SeedData__Enabled=false`.
+
 ## Data Protection
 
 - Passwords are never stored in plaintext.

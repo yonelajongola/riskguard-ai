@@ -23,7 +23,9 @@ public static class DependencyInjection
         {
             if (provider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase))
             {
-                options.UseSqlServer(connectionString);
+                options.UseSqlServer(
+                    connectionString,
+                    sqlServer => sqlServer.MigrationsAssembly("RiskGuard.Persistence.SqlServerMigrations"));
             }
             else
             {

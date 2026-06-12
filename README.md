@@ -202,6 +202,24 @@ dotnet ef database update `
 
 For production, generate and review an idempotent SQL script rather than applying schema changes automatically from the web process.
 
+Azure SQL uses the dedicated SQL Server migrations project:
+
+```powershell
+$env:Database__Provider = "SqlServer"
+$env:SQL_CONNECTION_STRING = "YOUR_AZURE_SQL_CONNECTION_STRING"
+$env:JWT_SECRET = "YOUR_PRODUCTION_JWT_SECRET"
+
+dotnet ef migrations script --idempotent `
+  --project backend/src/RiskGuard.Persistence.SqlServerMigrations `
+  --startup-project backend/src/RiskGuard.API `
+  --context RiskGuardDbContext `
+  --output artifacts/riskguard-azure.sql
+```
+
+See the [Azure deployment runbook](docs/deployment-guide.md) for App Service,
+Azure SQL, Static Web Apps, Key Vault, monitoring, and first-admin bootstrap
+steps.
+
 ## Docker
 
 ```powershell

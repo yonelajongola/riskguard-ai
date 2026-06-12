@@ -215,6 +215,8 @@ await using (var scope = app.Services.CreateAsyncScope())
     else
     {
         await db.Database.MigrateAsync();
+        var roles = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
+        await SeedData.InitializeRolesAsync(roles);
     }
 }
 

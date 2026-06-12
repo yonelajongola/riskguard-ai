@@ -4,6 +4,7 @@
     <ProjectReference Include="..\RiskGuard.Application\RiskGuard.Application.csproj" />
     <ProjectReference Include="..\RiskGuard.Infrastructure\RiskGuard.Infrastructure.csproj" />
     <ProjectReference Include="..\RiskGuard.Persistence\RiskGuard.Persistence.csproj" />
+    <ProjectReference Include="..\RiskGuard.Persistence.SqlServerMigrations\RiskGuard.Persistence.SqlServerMigrations.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

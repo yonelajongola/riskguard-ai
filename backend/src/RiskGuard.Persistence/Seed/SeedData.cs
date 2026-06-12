@@ -32,7 +32,16 @@ public static class SeedData
         RoleManager<IdentityRole<Guid>> roleManager)
     {
         await db.Database.MigrateAsync();
+        await InitializeRolesAsync(roleManager);
 
+        var organization = await EnsureBusinessDataAsync(db);
+        var users = await EnsureUsersAsync(db, userManager, organization);
+        await EnsureLinkedSeedDataAsync(db, organization, users);
+        await EnsureReferenceDataAsync(db);
+    }
+
+    public static async Task InitializeRolesAsync(RoleManager<IdentityRole<Guid>> roleManager)
+    {
         foreach (var role in Roles)
         {
             if (!await roleManager.RoleExistsAsync(role))
@@ -42,11 +51,6 @@ public static class SeedData
                     $"create role '{role}'");
             }
         }
-
-        var organization = await EnsureBusinessDataAsync(db);
-        var users = await EnsureUsersAsync(db, userManager, organization);
-        await EnsureLinkedSeedDataAsync(db, organization, users);
-        await EnsureReferenceDataAsync(db);
     }
 
     private static async Task EnsureReferenceDataAsync(RiskGuardDbContext db)

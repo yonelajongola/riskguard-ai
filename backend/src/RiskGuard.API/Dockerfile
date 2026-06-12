@@ -7,6 +7,7 @@ COPY src/RiskGuard.Application/RiskGuard.Application.csproj src/RiskGuard.Applic
 COPY src/RiskGuard.Persistence/RiskGuard.Persistence.csproj src/RiskGuard.Persistence/
 COPY src/RiskGuard.Infrastructure/RiskGuard.Infrastructure.csproj src/RiskGuard.Infrastructure/
 COPY src/RiskGuard.API/RiskGuard.API.csproj src/RiskGuard.API/
+COPY src/RiskGuard.Persistence.SqlServerMigrations/RiskGuard.Persistence.SqlServerMigrations.csproj src/RiskGuard.Persistence.SqlServerMigrations/
 RUN dotnet restore src/RiskGuard.API/RiskGuard.API.csproj
 COPY src/ src/
 RUN dotnet publish src/RiskGuard.API/RiskGuard.API.csproj -c Release -o /app/publish --no-restore
