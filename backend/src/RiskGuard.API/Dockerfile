@@ -1,15 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
-COPY Directory.Packages.props ./
-COPY RiskGuardAI.sln ./
-COPY src/RiskGuard.Domain/RiskGuard.Domain.csproj src/RiskGuard.Domain/
-COPY src/RiskGuard.Application/RiskGuard.Application.csproj src/RiskGuard.Application/
-COPY src/RiskGuard.Persistence/RiskGuard.Persistence.csproj src/RiskGuard.Persistence/
-COPY src/RiskGuard.Infrastructure/RiskGuard.Infrastructure.csproj src/RiskGuard.Infrastructure/
-COPY src/RiskGuard.API/RiskGuard.API.csproj src/RiskGuard.API/
-COPY src/RiskGuard.Persistence.SqlServerMigrations/RiskGuard.Persistence.SqlServerMigrations.csproj src/RiskGuard.Persistence.SqlServerMigrations/
+COPY . .
 RUN dotnet restore src/RiskGuard.API/RiskGuard.API.csproj
-COPY src/ src/
 RUN dotnet publish src/RiskGuard.API/RiskGuard.API.csproj -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
