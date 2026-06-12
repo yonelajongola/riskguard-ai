@@ -57,10 +57,10 @@ npm run build
 Set-Location ..
 ```
 
-Install the EF Core command-line tool if it is not already available:
+Restore the repository-pinned EF Core command-line tool:
 
 ```powershell
-dotnet tool install --global dotnet-ef
+dotnet tool restore
 dotnet ef --version
 ```
 

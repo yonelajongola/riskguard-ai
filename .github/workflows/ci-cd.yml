@@ -33,12 +33,13 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
           cache: true
           cache-dependency-path: backend/Directory.Packages.props
+      - run: dotnet tool restore
       - run: dotnet restore RiskGuardAI.sln
       - run: dotnet build RiskGuardAI.sln --configuration Release --no-restore
       - run: dotnet test RiskGuardAI.sln --configuration Release --no-build --verbosity normal
@@ -57,12 +58,12 @@ jobs:
           --no-build
           --output ../artifacts/sql/riskguard-azure.sql
       - run: dotnet publish src/RiskGuard.API/RiskGuard.API.csproj --configuration Release --no-build --output ../artifacts/api
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: riskguard-api
           path: artifacts/api
           if-no-files-found: error
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: riskguard-azure-sql
           path: artifacts/sql/riskguard-azure.sql
@@ -77,8 +78,8 @@ jobs:
     env:
       VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || '/api' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
@@ -86,7 +87,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: riskguard-web
           path: frontend/dist
@@ -97,7 +98,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [backend, frontend]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: docker build -f backend/src/RiskGuard.API/Dockerfile backend -t riskguard-api:${{ github.sha }}
       - run: docker build --build-arg VITE_API_BASE_URL=/api frontend -t riskguard-web:${{ github.sha }}
 
@@ -110,7 +111,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: riskguard-api
           path: api-package
@@ -129,7 +130,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: riskguard-web
           path: web-package

@@ -129,6 +129,7 @@ These credentials are development data. `SeedData__Enabled` is disabled by defau
 From the repository root:
 
 ```powershell
+dotnet tool restore
 dotnet restore backend/RiskGuardAI.sln
 dotnet build backend/RiskGuardAI.sln
 dotnet ef database update `
