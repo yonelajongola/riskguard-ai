@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { demoModeEnabled, registrationEnabled } from "../lib/config";
 
 const features = [
   ["Risk assessments", "Structured, weighted assessments across eight enterprise risk categories.", ClipboardCheck],
@@ -41,7 +42,9 @@ export function LandingPage() {
         <div className={`landing-links ${menu ? "open" : ""}`}>
           <a href="#platform">Platform</a><a href="#intelligence">Intelligence</a><a href="#compliance">Compliance</a><a href="#pricing">Pricing</a>
           <Link to="/login" className="button button-ghost">Sign in</Link>
-          <Link to="/register" className="button button-primary">Get started <ArrowRight size={16} /></Link>
+          <Link to={registrationEnabled ? "/register" : "/login"} className="button button-primary">
+            {registrationEnabled ? "Get started" : "Open workspace"} <ArrowRight size={16} />
+          </Link>
         </div>
         <button className="icon-button landing-menu" onClick={() => setMenu((v) => !v)}>{menu ? <X /> : <Menu />}</button>
       </nav>
@@ -53,8 +56,10 @@ export function LandingPage() {
           <h1>AI-powered enterprise <span>risk intelligence</span></h1>
           <p>Identify, assess, monitor, and reduce business, cybersecurity, compliance, vendor, and operational risks from one intelligent platform.</p>
           <div className="hero-actions">
-            <Link to="/register" className="button button-primary button-large">Start assessing risk <ArrowRight size={18} /></Link>
-            <button onClick={enterDemo} className="button button-secondary button-large">Explore live demo</button>
+            <Link to={registrationEnabled ? "/register" : "/login"} className="button button-primary button-large">
+              {registrationEnabled ? "Start assessing risk" : "Sign in to RiskGuard"} <ArrowRight size={18} />
+            </Link>
+            {demoModeEnabled ? <button onClick={enterDemo} className="button button-secondary button-large">Explore live demo</button> : null}
           </div>
           <div className="trust-row"><span><Check size={15} /> No cloud services required</span><span><Check size={15} /> POPIA-ready controls</span><span><Check size={15} /> Azure deployment ready</span></div>
         </div>
@@ -67,7 +72,7 @@ export function LandingPage() {
         <div className="section-heading"><span className="eyebrow">One connected platform</span><h2>From scattered evidence to a clear risk position</h2><p>Replace spreadsheets, email chains, and disconnected reports with a governed system of record.</p></div>
         <div className="feature-grid">
           {features.map(([title, description, Icon]) => (
-            <article className="feature-card" key={title as string}><span><Icon size={22} /></span><h3>{title as string}</h3><p>{description as string}</p><Link to="/register">Explore capability <ArrowRight size={15} /></Link></article>
+            <article className="feature-card" key={title as string}><span><Icon size={22} /></span><h3>{title as string}</h3><p>{description as string}</p><Link to={registrationEnabled ? "/register" : "/login"}>Explore capability <ArrowRight size={15} /></Link></article>
           ))}
         </div>
       </section>
@@ -116,7 +121,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="cta-section"><div className="container"><span className="brand-mark"><ShieldCheck /></span><h2>Turn risk into confident decisions.</h2><p>See the complete FoodieBar risk workspace with realistic enterprise data.</p><button className="button button-primary button-large" onClick={enterDemo}>Open RiskGuard AI <ArrowRight size={18} /></button></div></section>
+      <section className="cta-section"><div className="container"><span className="brand-mark"><ShieldCheck /></span><h2>Turn risk into confident decisions.</h2><p>{demoModeEnabled ? "See the complete FoodieBar risk workspace with realistic enterprise data." : "Open your governed enterprise risk workspace."}</p>{demoModeEnabled ? <button className="button button-primary button-large" onClick={enterDemo}>Open RiskGuard AI <ArrowRight size={18} /></button> : <Link className="button button-primary button-large" to="/login">Sign in to RiskGuard <ArrowRight size={18} /></Link>}</div></section>
       <footer className="landing-footer container"><Link to="/" className="brand"><span className="brand-mark"><ShieldCheck size={19} /></span><span><strong>RiskGuard</strong><small>AI</small></span></Link><span>Enterprise Risk Intelligence</span><small>© 2026 RiskGuard AI. Portfolio demonstration.</small></footer>
     </div>
   );
@@ -150,8 +155,8 @@ function BadgeDot({ label }: { label: string }) { return <span className="badge-
 export function LoginPage() {
   const { login, useDemo, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("admin@riskguard.local");
-  const [password, setPassword] = useState("Admin@12345");
+  const [email, setEmail] = useState(demoModeEnabled ? "admin@riskguard.local" : "");
+  const [password, setPassword] = useState(demoModeEnabled ? "Admin@12345" : "");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   if (isAuthenticated) return <Navigate to="/app" replace />;
@@ -180,10 +185,10 @@ export function LoginPage() {
             {error ? <div className="form-error">{error}</div> : null}
             <button className="button button-primary button-full" disabled={loading}>{loading ? "Signing in..." : "Sign in securely"}<ArrowRight size={17} /></button>
           </form>
-          <div className="divider"><span>or</span></div>
-          <button className="button button-secondary button-full" onClick={() => { useDemo(); navigate("/app"); }}>Explore demo workspace</button>
-          <p className="auth-foot">New to RiskGuard? <Link to="/register">Create an account</Link></p>
-          <div className="demo-credentials"><strong>Demo administrator</strong><code>admin@riskguard.local</code><code>Admin@12345</code></div>
+          {demoModeEnabled ? <><div className="divider"><span>or</span></div>
+            <button className="button button-secondary button-full" onClick={() => { useDemo(); navigate("/app"); }}>Explore demo workspace</button>
+            <div className="demo-credentials"><strong>Demo administrator</strong><code>admin@riskguard.local</code><code>Admin@12345</code></div></> : null}
+          {registrationEnabled ? <p className="auth-foot">New to RiskGuard? <Link to="/register">Create an account</Link></p> : null}
         </div>
       </div>
     </div>
@@ -203,6 +208,7 @@ export function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   if (isAuthenticated) return <Navigate to="/app" replace />;
+  if (!registrationEnabled) return <Navigate to="/login" replace />;
 
   async function submit(event: FormEvent) {
     event.preventDefault();

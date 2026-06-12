@@ -1,4 +1,5 @@
 import type { AuthResponse } from "../types";
+import { demoModeEnabled } from "./config";
 
 const API_URL = normalizeApiUrl(import.meta.env.VITE_API_BASE_URL);
 const SESSION_KEY = "riskguard.session";
@@ -19,7 +20,12 @@ export function getSession(): AuthResponse | null {
   const value = sessionStorage.getItem(SESSION_KEY);
   if (!value) return null;
   try {
-    return JSON.parse(value) as AuthResponse;
+    const session = JSON.parse(value) as AuthResponse;
+    if (session.accessToken === "demo-token" && !demoModeEnabled) {
+      sessionStorage.removeItem(SESSION_KEY);
+      return null;
+    }
+    return session;
   } catch {
     sessionStorage.removeItem(SESSION_KEY);
     return null;
@@ -40,7 +46,7 @@ export async function api<T>(
   const session = getSession();
   if (session?.accessToken === "demo-token") {
     if (fallback !== undefined) return fallback;
-    throw new Error("This action requires the local API. Sign in with a seeded account to continue.");
+    throw new Error("The demo workspace is read-only. Sign out and use a live account to make changes.");
   }
   if (!session && fallback !== undefined) {
     return fallback;
@@ -109,7 +115,7 @@ async function refreshSession(refreshToken: string) {
 export async function downloadReport(path: string, fileName: string) {
   const session = getSession();
   if (session?.accessToken === "demo-token") {
-    throw new Error("Start the backend to generate downloadable reports.");
+    throw new Error("The demo workspace cannot generate files. Sign out and use a live account.");
   }
   const response = await authenticatedFetch(path);
   const blob = await response.blob();

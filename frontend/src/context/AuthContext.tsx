@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { api, demoSession, getSession, setSession } from "../lib/api";
+import { demoModeEnabled } from "../lib/config";
 import type { AuthResponse, User } from "../types";
 
 interface AuthContextValue {
@@ -51,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(result);
       },
       useDemo: () => {
+        if (!demoModeEnabled) return;
         queryClient.clear();
         setSession(demoSession);
       },
