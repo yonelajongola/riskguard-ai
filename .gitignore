@@ -1,0 +1,47 @@
+# Build output
+**/bin/
+**/obj/
+**/dist/
+**/TestResults/
+artifacts/
+
+# Dependencies
+**/node_modules/
+
+# Local application state
+*.db
+*.db-shm
+*.db-wal
+*.log
+**/uploads/
+**/.ui-review/
+
+# Secrets and machine-specific configuration
+.env
+.env.*
+!.env.example
+!frontend/.env.example
+appsettings.Local.json
+appsettings.*.Local.json
+secrets.json
+**/Properties/PublishProfiles/
+*.PublishSettings
+*.pubxml
+*.pubxml.user
+
+# IDE and operating system files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+.DS_Store
+Thumbs.db
+
+# Generated frontend tooling
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+
+# Obsolete local working copy; the supported app is /backend + /frontend.
+RiskGuardAI/

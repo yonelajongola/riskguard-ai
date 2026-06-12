@@ -1,0 +1,14 @@
+@RiskGuard.API_HostAddress = http://localhost:5000
+
+GET {{RiskGuard.API_HostAddress}}/health
+Accept: application/json
+
+###
+
+POST {{RiskGuard.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@riskguard.local",
+  "password": "Admin@12345"
+}
