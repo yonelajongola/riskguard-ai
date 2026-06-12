@@ -1404,7 +1404,7 @@ namespace RiskGuard.Persistence.SqlServerMigrations.Migrations
                     b.HasOne("RiskGuard.Domain.Entities.Department", "Department")
                         .WithMany()
                         .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("RiskGuard.Domain.Entities.Organization", "Organization")
                         .WithMany("Assessments")
@@ -1415,7 +1415,7 @@ namespace RiskGuard.Persistence.SqlServerMigrations.Migrations
                     b.HasOne("RiskGuard.Domain.Entities.RiskCategory", "RiskCategory")
                         .WithMany()
                         .HasForeignKey("RiskCategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.Navigation("Department");
@@ -1553,7 +1553,7 @@ namespace RiskGuard.Persistence.SqlServerMigrations.Migrations
                     b.HasOne("RiskGuard.Domain.Entities.Department", "Department")
                         .WithMany()
                         .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Assessment");
 

@@ -75,13 +75,19 @@ public sealed class RiskGuardDbContext(DbContextOptions<RiskGuardDbContext> opti
             .HasOne(x => x.Department)
             .WithMany()
             .HasForeignKey(x => x.DepartmentId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.Entity<Assessment>()
+            .HasOne(x => x.RiskCategory)
+            .WithMany()
+            .HasForeignKey(x => x.RiskCategoryId)
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder.Entity<RiskItem>()
             .HasOne(x => x.Department)
             .WithMany()
             .HasForeignKey(x => x.DepartmentId)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder.Entity<Incident>()
             .HasOne(x => x.RelatedRisk)

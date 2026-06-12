@@ -519,8 +519,7 @@ namespace RiskGuard.Persistence.SqlServerMigrations.Migrations
                         name: "FK_Assessments_Departments_DepartmentId",
                         column: x => x.DepartmentId,
                         principalTable: "Departments",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Assessments_Organizations_OrganizationId",
                         column: x => x.OrganizationId,
@@ -531,8 +530,7 @@ namespace RiskGuard.Persistence.SqlServerMigrations.Migrations
                         name: "FK_Assessments_RiskCategories_RiskCategoryId",
                         column: x => x.RiskCategoryId,
                         principalTable: "RiskCategories",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -626,8 +624,7 @@ namespace RiskGuard.Persistence.SqlServerMigrations.Migrations
                         name: "FK_Risks_Departments_DepartmentId",
                         column: x => x.DepartmentId,
                         principalTable: "Departments",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
