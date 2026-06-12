@@ -9,9 +9,8 @@ WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
-RUN addgroup --system riskguard && adduser --system --ingroup riskguard riskguard
 COPY --from=build /app/publish .
-USER riskguard
+USER $APP_UID
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "RiskGuard.API.dll"]
