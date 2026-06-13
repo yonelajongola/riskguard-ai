@@ -5,6 +5,8 @@ namespace RiskGuard.Application.DTOs;
 public sealed record LoginRequest(string Email, string Password);
 public sealed record RegisterRequest(string FirstName, string LastName, string OrganizationName, string Email, string Password);
 public sealed record RefreshRequest(string RefreshToken);
+public sealed record UpdateProfileRequest(string FirstName, string LastName, string PhoneNumber);
+public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword);
 public sealed record AuthResponse(string AccessToken, string RefreshToken, DateTime ExpiresAtUtc, UserDto User);
 public sealed record UserDto(
     Guid Id,
@@ -12,7 +14,8 @@ public sealed record UserDto(
     string FullName,
     IReadOnlyCollection<string> Roles,
     Guid? OrganizationId,
-    Guid? DepartmentId);
+    Guid? DepartmentId,
+    bool IsActive);
 
 public sealed record CreateOrganizationRequest(
     string Name,
@@ -126,6 +129,24 @@ public sealed record VendorRiskInput(
     decimal SingleSupplierDependency,
     decimal ServiceReliabilityRisk,
     decimal DataAccessRisk);
+
+public sealed record CriticalSystemRequest(
+    string Name,
+    string SystemOwner,
+    int RecoveryTimeObjectiveHours,
+    int RecoveryPointObjectiveHours,
+    string BackupFrequency,
+    DateTime? LastBackupTestDateUtc,
+    DateTime? LastDisasterRecoveryTestDateUtc,
+    string DowntimeImpact,
+    decimal ContinuityScore,
+    string Status);
+
+public sealed record RecoveryTestRequest(
+    DateTime TestedAtUtc,
+    decimal ContinuityScore,
+    string Status,
+    string Notes);
 
 public sealed record AiChatRequest(
     string Prompt,

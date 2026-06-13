@@ -50,13 +50,14 @@ public sealed class IncidentsController(RiskGuardDbContext db, RiskGuard.Applica
     [HttpPost]
     public async Task<ActionResult> Create(CreateIncidentRequest request)
     {
-        if (request.DepartmentId.HasValue &&
+        if (!request.DepartmentId.HasValue && !request.RiskItemId.HasValue ||
+            request.DepartmentId.HasValue &&
             !await db.Departments.AnyAsync(x => x.Id == request.DepartmentId && x.OrganizationId == User.OrganizationId()) ||
             request.RiskItemId.HasValue &&
             !await db.Risks.AnyAsync(x => x.Id == request.RiskItemId &&
                 x.Assessment != null && x.Assessment.OrganizationId == User.OrganizationId()))
         {
-            return BadRequest(new { message = "Department or related risk is invalid." });
+            return BadRequest(new { message = "A valid department or related risk is required." });
         }
         var incident = new Incident
         {
@@ -82,6 +83,15 @@ public sealed class IncidentsController(RiskGuardDbContext db, RiskGuard.Applica
     {
         var incident = await FindOwnedAsync(id);
         if (incident is null) return NotFound();
+        if (!request.DepartmentId.HasValue && !request.RiskItemId.HasValue ||
+            request.DepartmentId.HasValue &&
+            !await db.Departments.AnyAsync(x => x.Id == request.DepartmentId && x.OrganizationId == User.OrganizationId()) ||
+            request.RiskItemId.HasValue &&
+            !await db.Risks.AnyAsync(x => x.Id == request.RiskItemId &&
+                x.Assessment != null && x.Assessment.OrganizationId == User.OrganizationId()))
+        {
+            return BadRequest(new { message = "A valid department or related risk is required." });
+        }
         incident.Title = request.Title.Trim();
         incident.Description = request.Description.Trim();
         incident.Category = request.Category;

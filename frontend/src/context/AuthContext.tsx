@@ -12,6 +12,7 @@ interface AuthContextValue {
   register: (input: { firstName: string; lastName: string; organizationName: string; email: string; password: string }) => Promise<void>;
   useDemo: () => void;
   logout: () => Promise<void>;
+  updateUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -55,6 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!demoModeEnabled) return;
         queryClient.clear();
         setSession(demoSession);
+      },
+      updateUser: (user) => {
+        if (!session) return;
+        setSession({ ...session, user });
       },
       logout: async () => {
         if (session && session.accessToken !== "demo-token") {

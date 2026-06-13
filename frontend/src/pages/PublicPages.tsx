@@ -13,7 +13,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { demoModeEnabled, registrationEnabled } from "../lib/config";
 
@@ -115,7 +115,7 @@ export function LandingPage() {
           ].map(([name, detail, price, items], index) => (
             <article className={`price-card ${index === 1 ? "featured" : ""}`} key={name as string}>
               {index === 1 ? <span className="popular">MOST POPULAR</span> : null}<h3>{name as string}</h3><p>{detail as string}</p><strong>{price as string}{price !== "Custom" ? <small>/month</small> : null}</strong>
-              <ul>{(items as string[]).map((item) => <li key={item}><Check size={16} />{item}</li>)}</ul><button type="button" className={`button ${index === 1 ? "button-primary" : "button-secondary"}`} disabled title="Coming soon">Choose {name as string} <span className="coming-soon-label">Coming soon</span></button>
+              <ul>{(items as string[]).map((item) => <li key={item}><Check size={16} />{item}</li>)}</ul><Link className={`button ${index === 1 ? "button-primary" : "button-secondary"}`} to={registrationEnabled?`/register?plan=${encodeURIComponent(name as string)}`:"/login"}>Choose {name as string}</Link>
             </article>
           ))}
         </div>
@@ -198,6 +198,8 @@ export function LoginPage() {
 export function RegisterPage() {
   const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const selectedPlan = searchParams.get("plan");
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -235,6 +237,7 @@ export function RegisterPage() {
       <div className="auth-panel"><div className="auth-card">
         <Link to="/" className="brand auth-brand"><span className="brand-mark"><ShieldCheck /></span><span><strong>RiskGuard</strong><small>AI</small></span></Link>
         <span className="eyebrow">Create your workspace</span><h2>Start building risk visibility</h2><p>The first account becomes the administrator of an isolated workspace.</p>
+        {selectedPlan ? <div className="attention-banner attention-info"><div><strong>{selectedPlan} plan selected</strong><span>Your selection is recorded for onboarding; no payment is collected in this portfolio deployment.</span></div></div> : null}
         <form onSubmit={submit}>
           <div className="form-grid"><label>First name<input {...field("firstName")} placeholder="Lerato" required /></label><label>Last name<input {...field("lastName")} placeholder="Mokoena" required /></label></div>
           <label>Organization name<input {...field("organizationName")} placeholder="Acme Operations" required /></label>

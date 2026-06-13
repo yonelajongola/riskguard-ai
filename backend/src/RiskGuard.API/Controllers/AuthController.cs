@@ -227,6 +227,51 @@ public sealed class AuthController(
         return Ok(await ToDtoAsync(user));
     }
 
+    [Authorize]
+    [HttpPut("profile")]
+    public async Task<ActionResult<UserDto>> UpdateProfile(UpdateProfileRequest request)
+    {
+        var user = await userManager.FindByIdAsync(User.UserId());
+        if (user is null || !user.IsActive) return Unauthorized();
+        if (string.IsNullOrWhiteSpace(request.FirstName) || string.IsNullOrWhiteSpace(request.LastName))
+        {
+            return BadRequest(new { message = "First name and last name are required." });
+        }
+
+        user.FirstName = request.FirstName.Trim();
+        user.LastName = request.LastName.Trim();
+        user.PhoneNumber = request.PhoneNumber.Trim();
+        var result = await userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Errors.Select(error => error.Description) });
+        }
+
+        await db.WriteAuditAsync(User, HttpContext, "Profile updated", "ApplicationUser", user.Id, user.Email ?? user.Id.ToString());
+        return Ok(await ToDtoAsync(user));
+    }
+
+    [Authorize]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
+    {
+        var user = await userManager.FindByIdAsync(User.UserId());
+        if (user is null || !user.IsActive) return Unauthorized();
+        if (string.IsNullOrWhiteSpace(request.CurrentPassword) || string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            return BadRequest(new { message = "Current and new passwords are required." });
+        }
+
+        var result = await userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { errors = result.Errors.Select(error => error.Description) });
+        }
+
+        await db.WriteAuditAsync(User, HttpContext, "Password changed", "ApplicationUser", user.Id, "User changed their password.");
+        return NoContent();
+    }
+
     private async Task<AuthResponse> IssueTokensAsync(ApplicationUser user)
     {
         var roles = await userManager.GetRolesAsync(user);
@@ -261,7 +306,8 @@ public sealed class AuthController(
             user.FullName,
             (await userManager.GetRolesAsync(user)).ToArray(),
             user.OrganizationId,
-            user.DepartmentId);
+            user.DepartmentId,
+            user.IsActive);
 
     private async Task WriteFailedLoginAsync(string email)
     {

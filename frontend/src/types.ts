@@ -7,6 +7,7 @@ export interface User {
   roles: string[];
   organizationId?: string;
   departmentId?: string;
+  isActive?: boolean;
 }
 
 export interface AuthResponse {
@@ -41,7 +42,9 @@ export interface DashboardSummary {
 
 export interface Risk {
   id: string;
+  assessmentId?: string;
   title: string;
+  description?: string;
   category: string;
   score: number;
   riskLevel: RiskLevel;
@@ -218,7 +221,9 @@ export interface Vendor {
   riskScore: number;
   riskLevel: RiskLevel;
   owner: string;
+  contractStartDateUtc?: string;
   contractExpiryDateUtc: string;
+  dependencyLevel?: string;
   notes?: string;
 }
 

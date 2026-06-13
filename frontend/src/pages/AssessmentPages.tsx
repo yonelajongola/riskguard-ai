@@ -10,7 +10,6 @@ import {
   Clock3,
   Download,
   Filter,
-  MoreHorizontal,
   Plus,
 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -25,7 +24,7 @@ import type {
   UserSummary,
   RiskCalculationResult,
 } from "../types";
-import { Badge, Card, ComingSoonButton, formatDate, MetricCard, PageHeader, ProgressBar, RiskBadge } from "../components/ui";
+import { Badge, Card, formatDate, MetricCard, PageHeader, ProgressBar, RiskBadge } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
 
 const demoQuestions: AssessmentQuestion[] = [
@@ -54,8 +53,24 @@ export function AssessmentsPage() {
     queryFn: () => api<Assessment[]>("/assessments", {}, assessmentsDemo),
   });
   const [filter, setFilter] = useState("All");
+  const [advanced, setAdvanced] = useState(false);
+  const [category, setCategory] = useState("All");
+  const [assignee, setAssignee] = useState("All");
+  const [due, setDue] = useState("All");
+  const [exporting, setExporting] = useState(false);
+  const [actionError, setActionError] = useState("");
   const all = query.data ?? (isDemo ? assessmentsDemo : []);
-  const assessments = all.filter((item) => filter === "All" || item.status === filter);
+  const assessments = all.filter((item) => {
+    const statusMatch = filter === "All" || item.status === filter;
+    const categoryMatch = category === "All" || item.riskCategory?.name === category;
+    const assigneeMatch = assignee === "All" || item.assignedToName === assignee;
+    const dueDate = new Date(item.dueDateUtc);
+    const now = new Date();
+    const dueMatch = due === "All" ||
+      due === "Overdue" && dueDate < now ||
+      due === "Next 30 days" && dueDate >= now && dueDate <= new Date(now.getTime() + 30 * 86400000);
+    return statusMatch && categoryMatch && assigneeMatch && dueMatch;
+  });
   const active = all.filter((item) => !["Reviewed", "Approved", "Archived"].includes(item.status));
   const submitted = all.filter((item) => item.status === "Submitted").length;
   const overdue = active.filter((item) => new Date(item.dueDateUtc) < new Date()).length;
@@ -70,6 +85,14 @@ export function AssessmentsPage() {
   }
   if (query.isError && !isDemo) {
     return <div className="page-stack"><PageHeader eyebrow="Structured assurance" title="Risk assessments" description="Assign, complete, review, and approve weighted assessments across the enterprise."/><div className="form-error">{query.error.message}</div></div>;
+  }
+
+  async function exportAssessments() {
+    setExporting(true);
+    setActionError("");
+    try { await downloadReport("/reports/assessments/csv", "RiskGuard-Assessments.csv"); }
+    catch (error) { setActionError(error instanceof Error ? error.message : "Assessment export failed."); }
+    finally { setExporting(false); }
   }
 
   return (
@@ -87,6 +110,7 @@ export function AssessmentsPage() {
         <MetricCard label="Overdue" value={`${overdue}`} detail={overdue ? "Needs owner attention" : "All actions on track"} icon={<CircleAlert/>} tone="purple"/>
       </div>
       <Card className="table-card">
+        {actionError ? <div className="form-error">{actionError}</div> : null}
         <div className="table-toolbar">
           <div className="tabs">
             {["All","Draft","Assigned","InProgress","Submitted","Reviewed"].map((item) =>
@@ -94,8 +118,14 @@ export function AssessmentsPage() {
                 {item === "InProgress" ? "In progress" : item}
               </button>)}
           </div>
-          <div className="toolbar-actions"><ComingSoonButton><Filter size={15}/> Advanced filters</ComingSoonButton><ComingSoonButton className="icon-button" aria-label="More assessment options"><MoreHorizontal size={18}/></ComingSoonButton></div>
+          <div className="toolbar-actions"><button type="button" className="button button-secondary" onClick={() => setAdvanced((value) => !value)}><Filter size={15}/> {advanced ? "Hide filters" : "Advanced filters"}</button><button type="button" className="button button-secondary" disabled={exporting} onClick={exportAssessments}><Download size={15}/> {exporting ? "Exporting..." : "Export CSV"}</button></div>
         </div>
+        {advanced ? <div className="filter-panel">
+          <label>Category<select value={category} onChange={(event) => setCategory(event.target.value)}><option>All</option>{[...new Set(all.map((item) => item.riskCategory?.name).filter(Boolean))].map((item) => <option key={item}>{item}</option>)}</select></label>
+          <label>Assignee<select value={assignee} onChange={(event) => setAssignee(event.target.value)}><option>All</option>{[...new Set(all.map((item) => item.assignedToName))].map((item) => <option key={item}>{item}</option>)}</select></label>
+          <label>Due date<select value={due} onChange={(event) => setDue(event.target.value)}><option>All</option><option>Overdue</option><option>Next 30 days</option></select></label>
+          <button type="button" className="button button-secondary" onClick={() => { setCategory("All"); setAssignee("All"); setDue("All"); }}>Reset</button>
+        </div> : null}
         <div className="table-wrap"><table><thead><tr><th>Assessment</th><th>Department</th><th>Assignee</th><th>Due date</th><th>Status</th><th>Risk score</th><th></th></tr></thead><tbody>
           {assessments.map((assessment) => <tr key={assessment.id}>
             <td><Link className="cell-link" to={`/app/assessments/${assessment.id}`}><span className="type-icon"><ClipboardCheck size={17}/></span><span><strong>{assessment.title}</strong><small>{assessment.riskCategory?.name}</small></span></Link></td>

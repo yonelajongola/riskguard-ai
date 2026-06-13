@@ -26,7 +26,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { notificationsDemo } from "../data/demo";
 import { api } from "../lib/api";
-import type { Notification, Organization } from "../types";
+import type { Assessment, Incident, Notification, Organization, Risk, Vendor } from "../types";
 
 const navigation = [
   { label: "Overview", items: [
@@ -66,6 +66,8 @@ export function AppShell() {
   const [notificationAction, setNotificationAction] = useState("");
   const [notificationError, setNotificationError] = useState("");
   const [signingOut, setSigningOut] = useState(false);
+  const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const queryClient = useQueryClient();
   const organizationQuery = useQuery({
     queryKey: ["organizations"],
@@ -78,6 +80,30 @@ export function AppShell() {
   const notificationItems = notificationQuery.data ?? (isDemo ? notificationsDemo : []);
   const unread = notificationItems.filter((item) => !item.isRead).length;
   const organizationName = organizationQuery.data?.[0]?.name ?? (isDemo ? "FoodieBar" : "RiskGuard workspace");
+  const searchQuery = useQuery({
+    queryKey: ["global-search", search],
+    enabled: search.trim().length >= 2,
+    queryFn: async () => {
+      const safe = async <T,>(path: string) => {
+        try { return await api<T[]>(path, {}, []); }
+        catch { return []; }
+      };
+      const [assessments, risks, incidents, vendors] = await Promise.all([
+        safe<Assessment>("/assessments"),
+        safe<Risk>("/risks"),
+        safe<Incident>("/incidents"),
+        safe<Vendor>("/vendors"),
+      ]);
+      const term = search.trim().toLowerCase();
+      return [
+        ...assessments.map((item) => ({ id: item.id, title: item.title, type: "Assessment", to: `/app/assessments/${item.id}` })),
+        ...risks.map((item) => ({ id: item.id, title: item.title, type: "Risk", to: `/app/risks/${item.id}` })),
+        ...incidents.map((item) => ({ id: item.id, title: item.title, type: "Incident", to: `/app/incidents/${item.id}` })),
+        ...vendors.map((item) => ({ id: item.id, title: item.name, type: "Vendor", to: `/app/vendors/${item.id}` })),
+        ...navigation.flatMap((section) => section.items.map((item) => ({ id: item.to, title: item.label, type: "Page", to: item.to }))),
+      ].filter((item) => `${item.title} ${item.type}`.toLowerCase().includes(term)).slice(0, 12);
+    },
+  });
 
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
@@ -176,7 +202,32 @@ export function AppShell() {
           <button className="icon-button menu-button" onClick={() => setOpen(true)} aria-label="Open menu"><Menu size={21} /></button>
           <div className="search-box">
             <Search size={17} />
-            <input aria-label="Search (Coming soon)" placeholder="Global search - Coming soon" disabled title="Coming soon" />
+            <input
+              aria-label="Global search"
+              placeholder="Search risks, assessments, incidents..."
+              value={search}
+              onFocus={() => setSearchOpen(true)}
+              onBlur={() => window.setTimeout(() => setSearchOpen(false), 150)}
+              onChange={(event) => { setSearch(event.target.value); setSearchOpen(true); }}
+            />
+            {searchOpen && search.trim().length >= 2 ? (
+              <div className="search-results">
+                {searchQuery.isLoading ? <div className="search-empty">Searching workspace...</div> : null}
+                {!searchQuery.isLoading && searchQuery.data?.length === 0 ? <div className="search-empty">No matching workspace records.</div> : null}
+                {searchQuery.data?.map((item) => (
+                  <button
+                    type="button"
+                    className="search-result"
+                    key={`${item.type}-${item.id}`}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => { setSearch(""); setSearchOpen(false); navigate(item.to); }}
+                  >
+                    <span><strong>{item.title}</strong><small>{item.type}</small></span>
+                    <Search size={14} />
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
           <div className="topbar-actions">
             {isDemo ? <span className="demo-pill">Demo data</span> : <span className="live-pill"><i /> Live</span>}

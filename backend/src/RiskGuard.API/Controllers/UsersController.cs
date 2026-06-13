@@ -158,5 +158,5 @@ public sealed class UsersController(
         string FirstName, string LastName, string Role, bool IsActive, Guid? DepartmentId);
 
     private static UserDto ToDto(ApplicationUser user, IEnumerable<string> roles) =>
-        new(user.Id, user.Email!, user.FullName, roles.ToArray(), user.OrganizationId, user.DepartmentId);
+        new(user.Id, user.Email!, user.FullName, roles.ToArray(), user.OrganizationId, user.DepartmentId, user.IsActive);
 }

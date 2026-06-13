@@ -37,7 +37,7 @@ import {
 import { api, downloadReport } from "../lib/api";
 import { dashboardDemo, recommendationsDemo, risksDemo } from "../data/demo";
 import type { DashboardSummary, Recommendation, Risk } from "../types";
-import { Badge, Card, ComingSoonButton, formatMoney, MetricCard, PageHeader, ProgressBar, RiskBadge } from "../components/ui";
+import { Badge, Card, formatMoney, MetricCard, PageHeader, ProgressBar, RiskBadge } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
 
 const colors = ["#2f8cff", "#8b5cf6", "#f97316", "#ef4444", "#14b8a6", "#eab308", "#ec4899", "#64748b"];
@@ -46,6 +46,7 @@ export function DashboardPage() {
   const { isDemo, user } = useAuth();
   const canCreateAssessment = user?.roles.some((role) =>
     ["Admin", "Risk Manager", "Compliance Officer", "Security Analyst"].includes(role));
+  const [range, setRange] = useState("6 months");
   const summary = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => api<DashboardSummary>("/risks/dashboard-summary", {}, dashboardDemo),
@@ -67,6 +68,7 @@ export function DashboardPage() {
     return <div className="page-stack"><PageHeader eyebrow="Enterprise risk posture" title="Command center" description="A decision-ready view of current exposure and priority actions."/><div className="form-error">{error.message}</div></div>;
   }
   const data = summary.data ?? dashboardDemo;
+  const trend = range === "3 months" ? data.trend.slice(-3) : data.trend;
   const topRisks = (risks.data ?? risksDemo).slice(0, 5);
 
   return (
@@ -75,7 +77,7 @@ export function DashboardPage() {
         eyebrow="Enterprise risk posture"
         title="Command center"
         description="A decision-ready view of current exposure, control health, and priority actions."
-        actions={<><ComingSoonButton><Activity size={16} /> Date range</ComingSoonButton>{canCreateAssessment?<Link className="button button-primary" to="/app/assessments/new">New assessment</Link>:null}</>}
+        actions={<><label className="button button-secondary"><Activity size={16}/><select aria-label="Dashboard date range" value={range} onChange={(event)=>setRange(event.target.value)}><option>3 months</option><option>6 months</option><option>All available</option></select></label>{canCreateAssessment?<Link className="button button-primary" to="/app/assessments/new">New assessment</Link>:null}</>}
       />
       <div className="attention-banner">
         <span className="attention-icon"><ShieldAlert size={22} /></span>
@@ -93,7 +95,7 @@ export function DashboardPage() {
           <div className="card-head"><div><span className="card-kicker">Risk trajectory</span><h2>Enterprise exposure trend</h2></div><Badge tone="success">Improving 9.5%</Badge></div>
           <div className="chart-large">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data.trend}>
+              <AreaChart data={trend}>
                 <defs><linearGradient id="riskArea" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#2f8cff" stopOpacity={0.35}/><stop offset="95%" stopColor="#2f8cff" stopOpacity={0}/></linearGradient></defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                 <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fill: "var(--muted)", fontSize: 12 }} />

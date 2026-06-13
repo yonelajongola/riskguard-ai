@@ -26,6 +26,8 @@ Swagger is disabled by default outside Development.
 | POST | `/auth/forgot-password` | Public | Begin reset workflow |
 | POST | `/auth/reset-password` | Public | Reset password and revoke refresh tokens |
 | GET | `/auth/me` | Authenticated | Current user and workspace |
+| PUT | `/auth/profile` | Authenticated | Update the current user's name and phone |
+| POST | `/auth/change-password` | Authenticated | Change the current user's password |
 
 Login request:
 
@@ -139,6 +141,9 @@ Clients cannot submit risk scores. The API calculates them from stored mappings 
 | GET/POST | `/continuity` |
 | PUT | `/continuity/{id}` |
 | GET | `/continuity/dashboard` |
+| POST | `/continuity/{planId}/systems` |
+| PUT | `/continuity/{planId}/systems/{id}` |
+| POST | `/continuity/{planId}/systems/{id}/recovery-test` |
 
 ## AI Copilot
 

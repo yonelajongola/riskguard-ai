@@ -59,6 +59,7 @@ function App() {
         <Route path="assessments/new" element={<RoleRoute roles={["Admin", "Risk Manager", "Compliance Officer", "Security Analyst"]}><AssessmentWorkspacePage /></RoleRoute>} />
         <Route path="assessments/:id" element={<AssessmentWorkspacePage />} />
         <Route path="risks" element={<RisksPage />} />
+        <Route path="risks/:id" element={<RisksPage />} />
         <Route path="heatmap" element={<HeatMapPage />} />
         <Route path="recommendations" element={<RecommendationsPage />} />
         <Route path="compliance/frameworks" element={<CompliancePage />} />
