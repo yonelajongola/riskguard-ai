@@ -62,6 +62,25 @@ export interface HeatMapItem {
   department: string;
 }
 
+export interface RiskCalculationResult {
+  score: number;
+  level: RiskLevel;
+  color: string;
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  industry: string;
+  country: string;
+  employeeCount: number;
+  registrationNumber: string;
+  primaryContact: string;
+  email: string;
+  phone: string;
+  address: string;
+}
+
 export interface Assessment {
   id: string;
   title: string;
@@ -185,6 +204,8 @@ export interface Incident {
   detectedAtUtc: string;
   dueDateUtc?: string;
   department?: { name: string };
+  description?: string;
+  evidenceNotes?: string;
 }
 
 export interface Vendor {
@@ -198,6 +219,7 @@ export interface Vendor {
   riskLevel: RiskLevel;
   owner: string;
   contractExpiryDateUtc: string;
+  notes?: string;
 }
 
 export interface ComplianceDashboard {

@@ -37,7 +37,7 @@ public static class SeedData
         var organization = await EnsureBusinessDataAsync(db);
         var users = await EnsureUsersAsync(db, userManager, organization);
         await EnsureLinkedSeedDataAsync(db, organization, users);
-        await EnsureReferenceDataAsync(db);
+        await InitializeReferenceDataAsync(db);
     }
 
     public static async Task InitializeRolesAsync(RoleManager<IdentityRole<Guid>> roleManager)
@@ -53,7 +53,7 @@ public static class SeedData
         }
     }
 
-    private static async Task EnsureReferenceDataAsync(RiskGuardDbContext db)
+    public static async Task InitializeReferenceDataAsync(RiskGuardDbContext db)
     {
         var categories = await db.RiskCategories.ToDictionaryAsync(x => x.Type);
         foreach (var type in Enum.GetValues<RiskCategoryType>())

@@ -114,6 +114,9 @@ Development seeding creates these accounts:
 | Employee | `employee@riskguard.local` | `Employee@12345` |
 
 These credentials are development data. `SeedData__Enabled` is disabled by default outside Development.
+Production can load only shared assessment categories, questions, and compliance
+frameworks with `SeedData__ReferenceDataEnabled=true`; this does not create demo
+users, organizations, assessments, or risks.
 
 ## Local Setup
 
@@ -179,7 +182,9 @@ Copy `.env.example` for Docker or local shell configuration. Never commit the re
 | `AZURE_STORAGE_CONNECTION_STRING` | Optional | Future Blob Storage integration |
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | Optional | Azure Monitor/Application Insights configuration |
 
-ASP.NET Core hierarchical environment variables are also supported, including `Database__Provider`, `Cors__AllowedOrigins__0`, and `SeedData__Enabled`.
+ASP.NET Core hierarchical environment variables are also supported, including
+`Database__Provider`, `Cors__AllowedOrigins__0`, `SeedData__Enabled`, and
+`SeedData__ReferenceDataEnabled`.
 
 Placeholder-only backend configuration is available at [appsettings.Example.json](backend/src/RiskGuard.API/appsettings.Example.json).
 

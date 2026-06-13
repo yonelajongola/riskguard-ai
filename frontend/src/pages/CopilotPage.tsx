@@ -93,6 +93,7 @@ export function CopilotPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState<string>();
+  const [lastRequest, setLastRequest] = useState<{ prompt: string; suggestion?: SuggestedPrompt }>();
 
   const status = useQuery({
     queryKey: ["ai-status"],
@@ -108,9 +109,6 @@ export function CopilotPage() {
   });
 
   const latest = [...messages].reverse().find((message) => message.role === "assistant");
-  const lastUserMessage = [...messages].reverse().find(
-    (message): message is Extract<ChatMessage, { role: "user" }> => message.role === "user",
-  );
   const activeContext = latest?.role === "assistant" ? latest.response.context : undefined;
   const summary = dashboard.data ?? dashboardDemo;
   const providerMode = status.data?.mode ?? (isDemo ? "Demo mock" : "Checking provider");
@@ -137,6 +135,7 @@ export function CopilotPage() {
     setLoading(true);
     const endpoint = suggestion?.endpoint ?? "/ai/copilot-chat";
     const responseType = suggestion?.responseType ?? "Risk explanation";
+    setLastRequest({ prompt: clean, suggestion });
     const body = endpoint === "/ai/copilot-chat"
       ? { prompt: clean, responseType }
       : endpoint === "/ai/compliance-summary"
@@ -166,9 +165,13 @@ export function CopilotPage() {
       `Business impact: ${response.businessImpact}`,
       `Next steps:\n${response.nextSteps.map((item) => `- ${item}`).join("\n")}`,
     ].join("\n\n");
-    await navigator.clipboard.writeText(text);
-    setCopied(response.generatedAtUtc);
-    window.setTimeout(() => setCopied(undefined), 1_500);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(response.generatedAtUtc);
+      window.setTimeout(() => setCopied(undefined), 1_500);
+    } catch {
+      setError("The browser blocked clipboard access. Select the response text and copy it manually.");
+    }
   }
 
   return (
@@ -185,6 +188,7 @@ export function CopilotPage() {
           const allowed = !item.roles || item.roles.some((role) => user?.roles.includes(role));
           return (
             <button
+              type="button"
               className="ai-prompt-card"
               disabled={!allowed || loading}
               key={item.title}
@@ -230,7 +234,7 @@ export function CopilotPage() {
             ) : null}
           </div>
 
-          {error ? <div className="ai-error"><CircleAlert size={17} /><span>{error}</span><button onClick={() => send(lastUserMessage?.content ?? prompt)}>Retry</button></div> : null}
+          {error ? <div className="ai-error"><CircleAlert size={17} /><span>{error}</span>{lastRequest ? <button type="button" onClick={() => send(lastRequest.prompt, lastRequest.suggestion)}>Retry</button> : null}</div> : null}
 
           <form className="ai-composer" onSubmit={(event: FormEvent) => { event.preventDefault(); send(); }}>
             <textarea
@@ -240,7 +244,7 @@ export function CopilotPage() {
               maxLength={2000}
               rows={3}
             />
-            <div><small>Do not enter passwords, tokens, API keys, or confidential secrets.</small><button className="send-button" disabled={loading || !prompt.trim()}><Send size={17} /></button></div>
+            <div><small>Do not enter passwords, tokens, API keys, or confidential secrets.</small><button type="submit" className="send-button" disabled={loading || !prompt.trim()} aria-label="Send prompt"><Send size={17} /></button></div>
           </form>
         </Card>
 
@@ -301,7 +305,7 @@ function AiResponseCard({
       </div>
       <div className="ai-impact"><strong>Business impact</strong><p>{response.businessImpact}</p></div>
       <div className="ai-next"><strong>Next steps</strong>{response.nextSteps.map((item) => <span key={item}><Check size={14} />{item}</span>)}</div>
-      <footer><span>{response.isMock ? "Safe mock response" : "Azure OpenAI response"} · {new Date(response.generatedAtUtc).toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" })}</span><button onClick={onCopy}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? "Copied" : "Copy response"}</button></footer>
+      <footer><span>{response.isMock ? "Safe mock response" : "Azure OpenAI response"} · {new Date(response.generatedAtUtc).toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" })}</span><button type="button" onClick={onCopy}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? "Copied" : "Copy response"}</button></footer>
     </article>
   );
 }

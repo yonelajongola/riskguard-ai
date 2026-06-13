@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import type { RiskLevel } from "../types";
 
@@ -44,7 +44,7 @@ export function MetricCard({
   trend?: number;
 }) {
   return (
-    <Card className={`metric metric-${tone}`} interactive>
+    <Card className={`metric metric-${tone}`}>
       <div className="metric-top">
         <span className="metric-label">{label}</span>
         <span className="metric-icon">{icon}</span>
@@ -60,6 +60,26 @@ export function MetricCard({
         <span>{detail}</span>
       </div>
     </Card>
+  );
+}
+
+export function ComingSoonButton({
+  children,
+  className = "button button-secondary",
+  title = "Coming soon",
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button
+      {...props}
+      type="button"
+      className={className}
+      disabled
+      title={title}
+      aria-label={`${typeof children === "string" ? children : "Action"} - Coming soon`}
+    >
+      {children} <span className="coming-soon-label">Coming soon</span>
+    </button>
   );
 }
 

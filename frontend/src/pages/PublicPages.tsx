@@ -115,7 +115,7 @@ export function LandingPage() {
           ].map(([name, detail, price, items], index) => (
             <article className={`price-card ${index === 1 ? "featured" : ""}`} key={name as string}>
               {index === 1 ? <span className="popular">MOST POPULAR</span> : null}<h3>{name as string}</h3><p>{detail as string}</p><strong>{price as string}{price !== "Custom" ? <small>/month</small> : null}</strong>
-              <ul>{(items as string[]).map((item) => <li key={item}><Check size={16} />{item}</li>)}</ul><button className={`button ${index === 1 ? "button-primary" : "button-secondary"}`}>Choose {name as string}</button>
+              <ul>{(items as string[]).map((item) => <li key={item}><Check size={16} />{item}</li>)}</ul><button type="button" className={`button ${index === 1 ? "button-primary" : "button-secondary"}`} disabled title="Coming soon">Choose {name as string} <span className="coming-soon-label">Coming soon</span></button>
             </article>
           ))}
         </div>
@@ -183,10 +183,10 @@ export function LoginPage() {
             <label>Work email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
             <label>Password<div className="password-row"><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /><span>Reset through your administrator</span></div></label>
             {error ? <div className="form-error">{error}</div> : null}
-            <button className="button button-primary button-full" disabled={loading}>{loading ? "Signing in..." : "Sign in securely"}<ArrowRight size={17} /></button>
+            <button type="submit" className="button button-primary button-full" disabled={loading}>{loading ? "Signing in..." : "Sign in securely"}<ArrowRight size={17} /></button>
           </form>
           {demoModeEnabled ? <><div className="divider"><span>or</span></div>
-            <button className="button button-secondary button-full" onClick={() => { useDemo(); navigate("/app"); }}>Explore demo workspace</button>
+            <button type="button" className="button button-secondary button-full" onClick={() => { useDemo(); navigate("/app"); }}>Explore demo workspace</button>
             <div className="demo-credentials"><strong>Demo administrator</strong><code>admin@riskguard.local</code><code>Admin@12345</code></div></> : null}
           {registrationEnabled ? <p className="auth-foot">New to RiskGuard? <Link to="/register">Create an account</Link></p> : null}
         </div>
@@ -241,7 +241,7 @@ export function RegisterPage() {
           <label>Work email<input {...field("email")} type="email" placeholder="you@company.com" required /></label>
           <label>Password<input {...field("password")} type="password" placeholder="10+ characters, upper/lower, number, symbol" minLength={10} required /></label>
           {error ? <div className="form-error">{error}</div> : null}
-          <button className="button button-primary button-full" disabled={loading}>{loading ? "Creating workspace..." : "Create workspace"} <ArrowRight size={17} /></button>
+          <button type="submit" className="button button-primary button-full" disabled={loading}>{loading ? "Creating workspace..." : "Create workspace"} <ArrowRight size={17} /></button>
         </form>
         <p className="auth-foot">Already have an account? <Link to="/login">Sign in</Link></p>
       </div></div>

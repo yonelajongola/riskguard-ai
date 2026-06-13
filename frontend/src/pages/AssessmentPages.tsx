@@ -23,8 +23,9 @@ import type {
   Department,
   RiskCategory,
   UserSummary,
+  RiskCalculationResult,
 } from "../types";
-import { Badge, Card, formatDate, MetricCard, PageHeader, ProgressBar, RiskBadge } from "../components/ui";
+import { Badge, Card, ComingSoonButton, formatDate, MetricCard, PageHeader, ProgressBar, RiskBadge } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
 
 const demoQuestions: AssessmentQuestion[] = [
@@ -93,7 +94,7 @@ export function AssessmentsPage() {
                 {item === "InProgress" ? "In progress" : item}
               </button>)}
           </div>
-          <div className="toolbar-actions"><button className="button button-secondary"><Filter size={15}/> Filter</button><button className="icon-button" aria-label="More assessment options"><MoreHorizontal size={18}/></button></div>
+          <div className="toolbar-actions"><ComingSoonButton><Filter size={15}/> Advanced filters</ComingSoonButton><ComingSoonButton className="icon-button" aria-label="More assessment options"><MoreHorizontal size={18}/></ComingSoonButton></div>
         </div>
         <div className="table-wrap"><table><thead><tr><th>Assessment</th><th>Department</th><th>Assignee</th><th>Due date</th><th>Status</th><th>Risk score</th><th></th></tr></thead><tbody>
           {assessments.map((assessment) => <tr key={assessment.id}>
@@ -112,7 +113,7 @@ export function AssessmentsPage() {
 }
 
 export function AssessmentWorkspacePage() {
-  const { isDemo } = useAuth();
+  const { isDemo, user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -122,6 +123,8 @@ export function AssessmentWorkspacePage() {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
+  const [calculating, setCalculating] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const isNew = !id;
   const assessmentQuery = useQuery({
     queryKey: ["assessment", id],
@@ -219,12 +222,41 @@ export function AssessmentWorkspacePage() {
   async function downloadAssessmentReport() {
     if (!id) return;
     setMessage("");
+    setDownloading(true);
     try {
       await downloadReport(`/reports/risk/pdf/${id}`, `RiskGuard-${assessment?.title ?? "assessment"}.pdf`);
     } catch (reason) {
       setMessage(reason instanceof Error ? reason.message : "Assessment report generation failed.");
+    } finally {
+      setDownloading(false);
     }
   }
+
+  async function calculateRisk() {
+    if (!id) return;
+    setCalculating(true);
+    setMessage("");
+    try {
+      const calculation = await api<RiskCalculationResult>(`/assessments/${id}/calculate`, { method: "POST" });
+      const result = await api<AssessmentResult>(`/assessments/${id}/results`);
+      queryClient.setQueryData(["assessment-result", id], result);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["assessment", id] }),
+        queryClient.invalidateQueries({ queryKey: ["assessments"] }),
+        queryClient.invalidateQueries({ queryKey: ["risks"] }),
+        queryClient.invalidateQueries({ queryKey: ["recommendations"] }),
+        queryClient.invalidateQueries({ queryKey: ["dashboard"] }),
+      ]);
+      setMessage(`Risk score recalculated: ${Math.round(calculation.score)} (${calculation.level}).`);
+    } catch (reason) {
+      setMessage(reason instanceof Error ? reason.message : "Risk calculation failed.");
+    } finally {
+      setCalculating(false);
+    }
+  }
+
+  const canCalculate = user?.roles.some((role) =>
+    ["Admin", "Risk Manager", "Compliance Officer", "Security Analyst"].includes(role));
 
   return (
     <div className="page-stack assessment-workspace">
@@ -234,9 +266,11 @@ export function AssessmentWorkspacePage() {
         title={assessment?.title ?? "New risk assessment"}
         description={isNew ? "Define scope, ownership, category, and review dates." : finalized ? "This assessment is read-only because it has entered review." : "Complete every control and submit the assessment for review."}
         actions={!isNew && finalized
-          ? <button className="button button-primary" onClick={downloadAssessmentReport}><Download size={16}/> Generate report</button>
+          ? <><Link className="button button-secondary" to="/app/recommendations">View recommendations</Link>
+              {canCalculate ? <button type="button" className="button button-secondary" disabled={calculating} onClick={calculateRisk}>{calculating ? "Calculating..." : "Calculate risk"}</button> : null}
+              <button type="button" className="button button-primary" disabled={downloading} onClick={downloadAssessmentReport}><Download size={16}/> {downloading ? "Generating..." : "Download report"}</button></>
           : !isNew
-            ? <><button className="button button-secondary" disabled={savingDraft} onClick={() => saveDraft(false)}>{savingDraft ? "Saving..." : "Save draft"}</button><button className="button button-primary" disabled={submitting} onClick={submitAssessment}>{submitting ? "Submitting..." : "Submit assessment"}</button></>
+            ? <><button type="button" className="button button-secondary" disabled={savingDraft || submitting} onClick={() => saveDraft(false)}>{savingDraft ? "Saving..." : "Save draft"}</button><button type="button" className="button button-primary" disabled={submitting || savingDraft || questions.length === 0} onClick={submitAssessment}>{submitting ? "Submitting..." : "Submit assessment"}</button></>
             : undefined}
       />
       {message ? <div className="form-error">{message}</div> : null}
@@ -247,7 +281,7 @@ export function AssessmentWorkspacePage() {
           <Card className="assessment-nav">
             <div className="assessment-progress"><div><span>Completion</span><strong>{progress}%</strong></div><ProgressBar value={progress} tone="blue"/><small>{Object.keys(answers).length} of {questions.length} answered</small></div>
             <div className="question-nav">{questions.map((item,index) =>
-              <button key={item.id} className={`${step === index ? "active" : ""} ${answers[item.id] ? "complete" : ""}`} onClick={() => setStep(index)}>
+              <button type="button" key={item.id} className={`${step === index ? "active" : ""} ${answers[item.id] ? "complete" : ""}`} onClick={() => setStep(index)}>
                 <span>{answers[item.id] ? <Check size={14}/> : index + 1}</span><div><strong>Question {index + 1}</strong><small>{item.complianceMappings.split(";")[0]}</small></div>
               </button>)}</div>
           </Card>
@@ -263,7 +297,7 @@ export function AssessmentWorkspacePage() {
             </div>
             <label className="field-label">Assessment notes<textarea value={notes[question?.id] ?? ""} disabled={finalized} onChange={(event) => question && setNotes({...notes,[question.id]:event.target.value})} placeholder="Explain the current control, gaps, exceptions, or compensating measures..."/></label>
             <div className="evidence-drop"><CheckCircle2 size={24}/><strong>Evidence references</strong><span>Record evidence details in the notes. File storage is not configured in this local build.</span></div>
-            <div className="question-actions"><button className="button button-secondary" disabled={step === 0} onClick={() => setStep(step - 1)}>Previous</button><button className="button button-primary" disabled={finalized || savingDraft || step === questions.length - 1} onClick={() => saveDraft(true)}>{savingDraft ? "Saving..." : "Save & continue"} <ArrowRight size={16}/></button></div>
+            <div className="question-actions"><button type="button" className="button button-secondary" disabled={step === 0} onClick={() => setStep(step - 1)}>Previous</button><button type="button" className="button button-primary" disabled={finalized || savingDraft || !answers[question?.id] || step === questions.length - 1} onClick={() => saveDraft(true)}>{savingDraft ? "Saving..." : "Save & continue"} <ArrowRight size={16}/></button></div>
           </Card>
           <Card className="assessment-context">
             <span className="card-kicker">Control context</span><h3>Why this matters</h3><p>{question?.recommendationText || "A documented and evidenced control reduces exposure and supports assurance."}</p>
@@ -299,7 +333,8 @@ function AssessmentResults({
         <MetricCard label="Compliance gaps" value={`${result.complianceGaps.length}`} detail={result.department} icon={<CircleAlert/>} tone="purple"/>
       </div>
       <Card>
-        <div className="card-head"><div><span className="card-kicker">Calculated result</span><h2>{result.riskTitle ?? result.title}</h2></div><RiskBadge level={result.riskLevel}/></div>
+        <div className="card-head"><div><span className="card-kicker">Calculated result</span><h2>{result.riskTitle ?? result.title}</h2></div><Link to="/app/recommendations">View recommendations <ArrowRight size={15}/></Link></div>
+        <RiskBadge level={result.riskLevel}/>
         {result.recommendations.length === 0 ? <p className="muted">No high-priority recommendations were generated.</p> : (
           <div className="action-list">
             {result.recommendations.map((item, index) => (
@@ -390,7 +425,8 @@ function CreateAssessmentForm() {
       </div></div></div>
       {referenceError ? <div className="form-error">{referenceError.message}</div> : null}
       {message ? <div className="form-error">{message}</div> : null}
-      <div className="form-footer"><Link to="/app/assessments" className="button button-secondary">Cancel</Link><button className="button button-primary" disabled={saving || categories.isLoading || departments.isLoading || assignees.isLoading || Boolean(referenceError)}>{saving ? "Creating..." : "Create and assign"} <ArrowRight size={16}/></button></div>
+      {!categories.isLoading && categories.data?.length === 0 ? <div className="form-error">No risk categories are configured. An administrator must load the assessment reference data before an assessment can be created.</div> : null}
+      <div className="form-footer"><Link to="/app/assessments" className="button button-secondary">Cancel</Link><button type="submit" className="button button-primary" disabled={saving || categories.isLoading || departments.isLoading || assignees.isLoading || Boolean(referenceError) || !form.riskCategoryId || !form.departmentId || !form.assignedToUserId}>{saving ? "Creating..." : "Create and assign"} <ArrowRight size={16}/></button></div>
     </form></Card>
   );
 }

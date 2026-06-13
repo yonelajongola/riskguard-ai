@@ -217,6 +217,10 @@ await using (var scope = app.Services.CreateAsyncScope())
         await db.Database.MigrateAsync();
         var roles = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
         await SeedData.InitializeRolesAsync(roles);
+        if (app.Configuration.GetValue<bool>("SeedData:ReferenceDataEnabled"))
+        {
+            await SeedData.InitializeReferenceDataAsync(db);
+        }
     }
 }
 

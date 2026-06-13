@@ -6,7 +6,6 @@ import {
   Bot,
   BriefcaseBusiness,
   Building2,
-  ChevronDown,
   ClipboardCheck,
   FileChartColumn,
   Gauge,
@@ -27,7 +26,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { notificationsDemo } from "../data/demo";
 import { api } from "../lib/api";
-import type { Notification } from "../types";
+import type { Notification, Organization } from "../types";
 
 const navigation = [
   { label: "Overview", items: [
@@ -64,13 +63,21 @@ export function AppShell() {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState(false);
   const [dark, setDark] = useState(() => localStorage.getItem("riskguard.theme") !== "light");
+  const [notificationAction, setNotificationAction] = useState("");
+  const [notificationError, setNotificationError] = useState("");
+  const [signingOut, setSigningOut] = useState(false);
   const queryClient = useQueryClient();
+  const organizationQuery = useQuery({
+    queryKey: ["organizations"],
+    queryFn: () => api<Organization[]>("/organizations", {}, []),
+  });
   const notificationQuery = useQuery({
     queryKey: ["notifications"],
     queryFn: () => api<Notification[]>("/notifications", {}, notificationsDemo),
   });
   const notificationItems = notificationQuery.data ?? (isDemo ? notificationsDemo : []);
   const unread = notificationItems.filter((item) => !item.isRead).length;
+  const organizationName = organizationQuery.data?.[0]?.name ?? (isDemo ? "FoodieBar" : "RiskGuard workspace");
 
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
@@ -78,6 +85,43 @@ export function AppShell() {
   }, [dark]);
 
   useEffect(() => setOpen(false), [location.pathname]);
+
+  async function markAllRead() {
+    if (isDemo || unread === 0) return;
+    setNotificationAction("all");
+    setNotificationError("");
+    try {
+      await api("/notifications/read-all", { method: "POST" });
+      await queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    } catch (error) {
+      setNotificationError(error instanceof Error ? error.message : "Notifications could not be updated.");
+    } finally {
+      setNotificationAction("");
+    }
+  }
+
+  async function openNotification(notification: Notification) {
+    setNotificationAction(notification.id);
+    setNotificationError("");
+    try {
+      if (!isDemo && !notification.isRead) {
+        await api(`/notifications/${notification.id}/read`, { method: "POST" });
+        await queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      }
+      setNotifications(false);
+      navigate(notification.link);
+    } catch (error) {
+      setNotificationError(error instanceof Error ? error.message : "Notification could not be opened.");
+    } finally {
+      setNotificationAction("");
+    }
+  }
+
+  async function signOut() {
+    setSigningOut(true);
+    await logout();
+    navigate("/login", { replace: true });
+  }
 
   return (
     <div className="app-frame">
@@ -87,10 +131,9 @@ export function AppShell() {
           <span><strong>RiskGuard</strong><small>AI</small></span>
           <button className="icon-button sidebar-close" onClick={() => setOpen(false)} aria-label="Close menu"><X size={20} /></button>
         </div>
-        <div className="org-switcher">
-          <span className="org-avatar">FB</span>
-          <span><strong>FoodieBar</strong><small>Enterprise workspace</small></span>
-          <ChevronDown size={15} />
+        <div className="org-switcher" title="Current workspace">
+          <span className="org-avatar">{initials(organizationName)}</span>
+          <span><strong>{organizationName}</strong><small>Enterprise workspace</small></span>
         </div>
         <nav className="side-nav">
           {navigation.map((section) => {
@@ -120,10 +163,10 @@ export function AppShell() {
             <div className="progress"><span className="progress-blue" style={{ width: "64%" }} /></div>
             <small>5 priority controls need evidence</small>
           </div>
-          <button className="profile-chip" onClick={() => navigate("/app/profile")}>
+          <button type="button" className="profile-chip" onClick={() => navigate("/app/profile")}>
             <span className="avatar">{initials(user?.fullName)}</span>
             <span><strong>{user?.fullName}</strong><small>{user?.roles[0] ?? "User"}</small></span>
-            <ChevronDown size={15} />
+            <Settings size={15} />
           </button>
         </div>
       </aside>
@@ -133,8 +176,7 @@ export function AppShell() {
           <button className="icon-button menu-button" onClick={() => setOpen(true)} aria-label="Open menu"><Menu size={21} /></button>
           <div className="search-box">
             <Search size={17} />
-            <input aria-label="Search" placeholder="Search risks, controls, vendors..." />
-            <kbd>Ctrl K</kbd>
+            <input aria-label="Search (Coming soon)" placeholder="Global search - Coming soon" disabled title="Coming soon" />
           </div>
           <div className="topbar-actions">
             {isDemo ? <span className="demo-pill">Demo data</span> : <span className="live-pill"><i /> Live</span>}
@@ -142,23 +184,24 @@ export function AppShell() {
               {dark ? <Sun size={19} /> : <Moon size={19} />}
             </button>
             <div className="notification-wrap">
-              <button className="icon-button" onClick={() => setNotifications((value) => !value)} aria-label="Notifications">
+              <button type="button" className="icon-button" onClick={() => setNotifications((value) => !value)} aria-label="Notifications">
                 <Bell size={19} />{unread > 0 ? <span className="notification-dot" /> : null}
               </button>
               {notifications ? (
                 <div className="popover notifications-popover">
-                  <div className="popover-head"><strong>Notifications</strong><button onClick={async () => { if (!isDemo) { await api("/notifications/read-all", { method: "POST" }); queryClient.invalidateQueries({ queryKey: ["notifications"] }); } }}>Mark all read</button></div>
+                  <div className="popover-head"><strong>Notifications</strong><button type="button" disabled={isDemo || unread === 0 || notificationAction === "all"} onClick={markAllRead}>{notificationAction === "all" ? "Updating..." : "Mark all read"}</button></div>
+                  {notificationError ? <div className="form-error">{notificationError}</div> : null}
                   {notificationItems.slice(0, 4).map((notification) => (
-                    <button className="notification-item" key={notification.id} onClick={async () => { if (!isDemo && !notification.isRead) await api(`/notifications/${notification.id}/read`, { method: "POST" }); queryClient.invalidateQueries({ queryKey: ["notifications"] }); navigate(notification.link); }}>
+                    <button type="button" className="notification-item" disabled={notificationAction === notification.id} key={notification.id} onClick={() => openNotification(notification)}>
                       <span className={`notice-dot notice-${notification.severity.toLowerCase()}`} />
                       <span><strong>{notification.title}</strong><small>{notification.message}</small></span>
                     </button>
                   ))}
-                  <button className="popover-link" onClick={() => navigate("/app/notifications")}>View all notifications</button>
+                  <button type="button" className="popover-link" onClick={() => { setNotifications(false); navigate("/app/notifications"); }}>View all notifications</button>
                 </div>
               ) : null}
             </div>
-            <button className="icon-button" onClick={async () => { await logout(); navigate("/login"); }} aria-label="Sign out"><LogOut size={18} /></button>
+            <button type="button" className="icon-button" disabled={signingOut} onClick={signOut} aria-label={signingOut ? "Signing out" : "Sign out"} title={signingOut ? "Signing out..." : "Sign out"}><LogOut size={18} /></button>
           </div>
         </header>
         <main className="page-content"><Outlet /></main>

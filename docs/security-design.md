@@ -61,7 +61,9 @@ On an empty production database, startup creates only the fixed Identity role
 definitions. The deployment runbook permits registration briefly to create the
 first workspace administrator, then requires
 `Authentication__AllowPublicRegistration=false` and an API restart. Demo users
-and business data remain disabled through `SeedData__Enabled=false`.
+and business data remain disabled through `SeedData__Enabled=false`. Shared
+assessment reference data can be enabled independently with
+`SeedData__ReferenceDataEnabled=true`.
 
 ## Data Protection
 

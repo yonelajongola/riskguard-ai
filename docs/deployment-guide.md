@@ -157,6 +157,7 @@ settings**. Add the following values:
 | `Cors__AllowedOrigins__0` | Set after the Static Web App is created |
 | `Authentication__AllowPublicRegistration` | `true` for first-admin bootstrap only |
 | `SeedData__Enabled` | `false` |
+| `SeedData__ReferenceDataEnabled` | `true` |
 | `Swagger__Enabled` | `false` |
 
 Generate a JWT secret locally:
@@ -297,7 +298,9 @@ AZURE_WEBAPP_NAME=riskguard-api-UNIQUE
    container validation, and `Deploy API to Azure App Service` jobs pass.
 
 The application performs a no-op migration check at startup after the manual
-migration and creates only the required Identity roles. It does not load demo
+migration and creates the required Identity roles. With
+`SeedData__ReferenceDataEnabled=true`, it also loads idempotent assessment
+categories, questions, and compliance frameworks. It does not load demo
 organizations, users, assessments, or risks while `SeedData__Enabled=false`.
 
 ## 6. Create the Azure Static Web App

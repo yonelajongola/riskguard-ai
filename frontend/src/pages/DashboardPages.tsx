@@ -37,13 +37,15 @@ import {
 import { api, downloadReport } from "../lib/api";
 import { dashboardDemo, recommendationsDemo, risksDemo } from "../data/demo";
 import type { DashboardSummary, Recommendation, Risk } from "../types";
-import { Badge, Card, formatMoney, MetricCard, PageHeader, ProgressBar, RiskBadge } from "../components/ui";
+import { Badge, Card, ComingSoonButton, formatMoney, MetricCard, PageHeader, ProgressBar, RiskBadge } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
 
 const colors = ["#2f8cff", "#8b5cf6", "#f97316", "#ef4444", "#14b8a6", "#eab308", "#ec4899", "#64748b"];
 
 export function DashboardPage() {
-  const { isDemo } = useAuth();
+  const { isDemo, user } = useAuth();
+  const canCreateAssessment = user?.roles.some((role) =>
+    ["Admin", "Risk Manager", "Compliance Officer", "Security Analyst"].includes(role));
   const summary = useQuery({
     queryKey: ["dashboard"],
     queryFn: () => api<DashboardSummary>("/risks/dashboard-summary", {}, dashboardDemo),
@@ -73,7 +75,7 @@ export function DashboardPage() {
         eyebrow="Enterprise risk posture"
         title="Command center"
         description="A decision-ready view of current exposure, control health, and priority actions."
-        actions={<><button className="button button-secondary"><Activity size={16} /> Last 90 days</button><Link className="button button-primary" to="/app/assessments/new">New assessment</Link></>}
+        actions={<><ComingSoonButton><Activity size={16} /> Date range</ComingSoonButton>{canCreateAssessment?<Link className="button button-primary" to="/app/assessments/new">New assessment</Link>:null}</>}
       />
       <div className="attention-banner">
         <span className="attention-icon"><ShieldAlert size={22} /></span>
@@ -170,7 +172,7 @@ export function ExecutiveDashboard() {
   }
   return (
     <div className="page-stack">
-      <PageHeader eyebrow="Board and executive view" title="Executive risk outlook" description="Strategic exposure, financial impact, control confidence, and management priorities." actions={<button className="button button-primary" onClick={report}><Download size={16} /> Board report</button>} />
+      <PageHeader eyebrow="Board and executive view" title="Executive risk outlook" description="Strategic exposure, financial impact, control confidence, and management priorities." actions={<button type="button" className="button button-primary" onClick={report}><Download size={16} /> Board report</button>} />
       {message ? <div className="form-error">{message}</div> : null}
       <div className="executive-hero">
         <div><span>CURRENT ENTERPRISE POSITION</span><h2>High exposure, with a clear path back to tolerance.</h2><p>Five management actions are projected to reduce residual risk by 24% this quarter.</p></div>
@@ -194,7 +196,7 @@ export function SecurityDashboard() {
   const statusData = [{ name: "Investigating", value: 3 }, { name: "Mitigated", value: 2 }, { name: "Closed", value: 7 }];
   return (
     <div className="page-stack">
-      <PageHeader eyebrow="Cyber defense posture" title="Security operations" description="Identity, endpoint, vulnerability, and incident signals translated into business exposure." actions={<button className="button button-primary">Create incident</button>} />
+      <PageHeader eyebrow="Cyber defense posture" title="Security operations" description="Identity, endpoint, vulnerability, and incident signals translated into business exposure." actions={<Link className="button button-primary" to="/app/incidents">Open incidents</Link>} />
       <div className="metric-grid">
         <MetricCard label="Cyber risk score" value="78" detail="Critical threshold" icon={<ShieldAlert />} tone="red" trend={3} />
         <MetricCard label="MFA coverage" value="71%" detail="9 accounts uncovered" icon={<Fingerprint />} tone="orange" />
