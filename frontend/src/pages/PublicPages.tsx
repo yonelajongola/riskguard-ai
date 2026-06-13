@@ -155,8 +155,8 @@ function BadgeDot({ label }: { label: string }) { return <span className="badge-
 export function LoginPage() {
   const { login, useDemo, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState(demoModeEnabled ? "admin@riskguard.local" : "");
-  const [password, setPassword] = useState(demoModeEnabled ? "Admin@12345" : "");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   if (isAuthenticated) return <Navigate to="/app" replace />;
@@ -187,7 +187,7 @@ export function LoginPage() {
           </form>
           {demoModeEnabled ? <><div className="divider"><span>or</span></div>
             <button type="button" className="button button-secondary button-full" onClick={() => { useDemo(); navigate("/app"); }}>Explore demo workspace</button>
-            <div className="demo-credentials"><strong>Demo administrator</strong><code>admin@riskguard.local</code><code>Admin@12345</code></div></> : null}
+            <div className="demo-credentials"><strong>Read-only portfolio demo</strong><span>No credentials required</span><span>Uses safe sample data</span></div></> : null}
           {registrationEnabled ? <p className="auth-foot">New to RiskGuard? <Link to="/register">Create an account</Link></p> : null}
         </div>
       </div>

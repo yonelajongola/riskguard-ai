@@ -77,7 +77,7 @@ export function AssessmentsPage() {
   const completion = all.length === 0
     ? 0
     : Math.round(all.filter((item) => ["Submitted", "Reviewed", "Approved"].includes(item.status)).length * 100 / all.length);
-  const canCreate = user?.roles.some((role) =>
+  const canCreate = !isDemo && user?.roles.some((role) =>
     ["Admin", "Risk Manager", "Compliance Officer", "Security Analyst"].includes(role));
 
   if (query.isLoading && !isDemo) {
@@ -118,7 +118,7 @@ export function AssessmentsPage() {
                 {item === "InProgress" ? "In progress" : item}
               </button>)}
           </div>
-          <div className="toolbar-actions"><button type="button" className="button button-secondary" onClick={() => setAdvanced((value) => !value)}><Filter size={15}/> {advanced ? "Hide filters" : "Advanced filters"}</button><button type="button" className="button button-secondary" disabled={exporting} onClick={exportAssessments}><Download size={15}/> {exporting ? "Exporting..." : "Export CSV"}</button></div>
+          <div className="toolbar-actions"><button type="button" className="button button-secondary" onClick={() => setAdvanced((value) => !value)}><Filter size={15}/> {advanced ? "Hide filters" : "Advanced filters"}</button>{!isDemo ? <button type="button" className="button button-secondary" disabled={exporting} onClick={exportAssessments}><Download size={15}/> {exporting ? "Exporting..." : "Export CSV"}</button> : null}</div>
         </div>
         {advanced ? <div className="filter-panel">
           <label>Category<select value={category} onChange={(event) => setCategory(event.target.value)}><option>All</option>{[...new Set(all.map((item) => item.riskCategory?.name).filter(Boolean))].map((item) => <option key={item}>{item}</option>)}</select></label>
@@ -170,6 +170,7 @@ export function AssessmentWorkspacePage() {
   const questions = questionsQuery.data ?? (isDemo ? demoQuestions : []);
   const question = questions[Math.min(step, Math.max(questions.length - 1, 0))];
   const finalized = assessment ? ["Submitted", "Reviewed", "Approved", "Archived"].includes(assessment.status) : false;
+  const readOnly = finalized || isDemo;
   const resultQuery = useQuery({
     queryKey: ["assessment-result", id],
     enabled: Boolean(id && finalized && !isDemo),
@@ -285,7 +286,7 @@ export function AssessmentWorkspacePage() {
     }
   }
 
-  const canCalculate = user?.roles.some((role) =>
+  const canCalculate = !isDemo && user?.roles.some((role) =>
     ["Admin", "Risk Manager", "Compliance Officer", "Security Analyst"].includes(role));
 
   return (
@@ -298,13 +299,14 @@ export function AssessmentWorkspacePage() {
         actions={!isNew && finalized
           ? <><Link className="button button-secondary" to="/app/recommendations">View recommendations</Link>
               {canCalculate ? <button type="button" className="button button-secondary" disabled={calculating} onClick={calculateRisk}>{calculating ? "Calculating..." : "Calculate risk"}</button> : null}
-              <button type="button" className="button button-primary" disabled={downloading} onClick={downloadAssessmentReport}><Download size={16}/> {downloading ? "Generating..." : "Download report"}</button></>
-          : !isNew
+              {!isDemo ? <button type="button" className="button button-primary" disabled={downloading} onClick={downloadAssessmentReport}><Download size={16}/> {downloading ? "Generating..." : "Download report"}</button> : null}</>
+          : !isNew && !isDemo
             ? <><button type="button" className="button button-secondary" disabled={savingDraft || submitting} onClick={() => saveDraft(false)}>{savingDraft ? "Saving..." : "Save draft"}</button><button type="button" className="button button-primary" disabled={submitting || savingDraft || questions.length === 0} onClick={submitAssessment}>{submitting ? "Submitting..." : "Submit assessment"}</button></>
             : undefined}
       />
+      {isDemo ? <div className="attention-banner attention-info"><CircleAlert/><div><strong>Read-only demo workspace</strong><span>Explore the assessment questions and control context. Sign in with a live account to create, save, calculate, or export assessments.</span></div></div> : null}
       {message ? <div className="form-error">{message}</div> : null}
-      {isNew ? <CreateAssessmentForm/> : assessmentQuery.isLoading ? <Card>Loading assessment...</Card> : assessmentQuery.isError ? <div className="form-error">{assessmentQuery.error.message}</div> : questionsQuery.isLoading ? <Card>Loading risk questions...</Card> : questionsQuery.isError ? <div className="form-error">{questionsQuery.error.message}</div> : (
+      {isNew && isDemo ? <Card><h3>Assessment creation requires a live account</h3><p className="muted">The public demo is read-only so its sample workspace remains consistent for every visitor.</p><Link className="button button-primary" to="/app/assessments">Browse sample assessments</Link></Card> : isNew ? <CreateAssessmentForm/> : assessmentQuery.isLoading ? <Card>Loading assessment...</Card> : assessmentQuery.isError ? <div className="form-error">{assessmentQuery.error.message}</div> : questionsQuery.isLoading ? <Card>Loading risk questions...</Card> : questionsQuery.isError ? <div className="form-error">{questionsQuery.error.message}</div> : (
         <>
         {finalized && !isDemo ? <AssessmentResults result={resultQuery.data} loading={resultQuery.isLoading} error={resultQuery.error}/>: null}
         <div className="assessment-layout">
@@ -321,13 +323,13 @@ export function AssessmentWorkspacePage() {
             <p>Select the answer that best reflects the control's current operating effectiveness.</p>
             <div className="answer-grid">
               {[["Yes","Control is implemented and evidenced","0"],["Partially","Control exists but is incomplete","50"],["No","Control is not implemented","100"],["Not applicable","Outside the approved scope","N/A"]].map(([answer,detail,score]) =>
-                <button type="button" key={answer} disabled={finalized} className={answers[question?.id] === answer ? "selected" : ""} onClick={() => question && setAnswers({...answers,[question.id]:answer})}>
+                <button type="button" key={answer} disabled={readOnly} className={answers[question?.id] === answer ? "selected" : ""} onClick={() => question && setAnswers({...answers,[question.id]:answer})}>
                   <span className="radio-dot"/><span><strong>{answer}</strong><small>{detail}</small></span><b>{score}</b>
                 </button>)}
             </div>
-            <label className="field-label">Assessment notes<textarea value={notes[question?.id] ?? ""} disabled={finalized} onChange={(event) => question && setNotes({...notes,[question.id]:event.target.value})} placeholder="Explain the current control, gaps, exceptions, or compensating measures..."/></label>
+            <label className="field-label">Assessment notes<textarea value={notes[question?.id] ?? ""} disabled={readOnly} onChange={(event) => question && setNotes({...notes,[question.id]:event.target.value})} placeholder="Explain the current control, gaps, exceptions, or compensating measures..."/></label>
             <div className="evidence-drop"><CheckCircle2 size={24}/><strong>Evidence references</strong><span>Record evidence details in the notes. File storage is not configured in this local build.</span></div>
-            <div className="question-actions"><button type="button" className="button button-secondary" disabled={step === 0} onClick={() => setStep(step - 1)}>Previous</button><button type="button" className="button button-primary" disabled={finalized || savingDraft || !answers[question?.id] || step === questions.length - 1} onClick={() => saveDraft(true)}>{savingDraft ? "Saving..." : "Save & continue"} <ArrowRight size={16}/></button></div>
+            <div className="question-actions"><button type="button" className="button button-secondary" disabled={step === 0} onClick={() => setStep(step - 1)}>Previous</button>{!isDemo ? <button type="button" className="button button-primary" disabled={finalized || savingDraft || !answers[question?.id] || step === questions.length - 1} onClick={() => saveDraft(true)}>{savingDraft ? "Saving..." : "Save & continue"} <ArrowRight size={16}/></button> : null}</div>
           </Card>
           <Card className="assessment-context">
             <span className="card-kicker">Control context</span><h3>Why this matters</h3><p>{question?.recommendationText || "A documented and evidenced control reduces exposure and supports assurance."}</p>

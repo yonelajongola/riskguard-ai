@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { notificationsDemo } from "../data/demo";
+import { assessmentsDemo, incidentsDemo, notificationsDemo, risksDemo, vendorsDemo } from "../data/demo";
 import { api } from "../lib/api";
 import type { Assessment, Incident, Notification, Organization, Risk, Vendor } from "../types";
 
@@ -84,15 +84,15 @@ export function AppShell() {
     queryKey: ["global-search", search],
     enabled: search.trim().length >= 2,
     queryFn: async () => {
-      const safe = async <T,>(path: string) => {
-        try { return await api<T[]>(path, {}, []); }
-        catch { return []; }
+      const safe = async <T,>(path: string, fallback: T[]) => {
+        try { return await api<T[]>(path, {}, fallback); }
+        catch { return fallback; }
       };
       const [assessments, risks, incidents, vendors] = await Promise.all([
-        safe<Assessment>("/assessments"),
-        safe<Risk>("/risks"),
-        safe<Incident>("/incidents"),
-        safe<Vendor>("/vendors"),
+        safe<Assessment>("/assessments", assessmentsDemo),
+        safe<Risk>("/risks", risksDemo),
+        safe<Incident>("/incidents", incidentsDemo),
+        safe<Vendor>("/vendors", vendorsDemo),
       ]);
       const term = search.trim().toLowerCase();
       return [

@@ -44,7 +44,7 @@ const colors = ["#2f8cff", "#8b5cf6", "#f97316", "#ef4444", "#14b8a6", "#eab308"
 
 export function DashboardPage() {
   const { isDemo, user } = useAuth();
-  const canCreateAssessment = user?.roles.some((role) =>
+  const canCreateAssessment = !isDemo && user?.roles.some((role) =>
     ["Admin", "Risk Manager", "Compliance Officer", "Security Analyst"].includes(role));
   const [range, setRange] = useState("6 months");
   const summary = useQuery({
@@ -174,7 +174,7 @@ export function ExecutiveDashboard() {
   }
   return (
     <div className="page-stack">
-      <PageHeader eyebrow="Board and executive view" title="Executive risk outlook" description="Strategic exposure, financial impact, control confidence, and management priorities." actions={<button type="button" className="button button-primary" onClick={report}><Download size={16} /> Board report</button>} />
+      <PageHeader eyebrow="Board and executive view" title="Executive risk outlook" description="Strategic exposure, financial impact, control confidence, and management priorities." actions={!isDemo ? <button type="button" className="button button-primary" onClick={report}><Download size={16} /> Board report</button> : undefined} />
       {message ? <div className="form-error">{message}</div> : null}
       <div className="executive-hero">
         <div><span>CURRENT ENTERPRISE POSITION</span><h2>High exposure, with a clear path back to tolerance.</h2><p>Five management actions are projected to reduce residual risk by 24% this quarter.</p></div>
